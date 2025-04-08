@@ -48,7 +48,7 @@ class ReproductorMusica:
         self.lista_reproduccion = ListaReproduccion()
         self.cancion_actual = None
         self.nodo_actual = None
-        self.is_paused = False  # Track if the music is paused
+        self.is_paused = False 
 
         pygame.mixer.init()
 
@@ -70,17 +70,17 @@ class ReproductorMusica:
         self.anterior_btn.grid(row=0, column=3, padx=5, pady=5)
         self.agregar_btn.grid(row=0, column=4, padx=5, pady=5)
 
-        self.cargar_canciones()  # Load songs when initializing
+        self.cargar_canciones() 
 
     def agregar_cancion(self):
         file_path = filedialog.askopenfilename(title="Seleccionar Canción", filetypes=(("MP3 Files", "*.mp3"), ("All Files", "*.*")))
         if file_path:
-            song_name = os.path.basename(file_path)  
-            artist_name = "Unknown Artist"  
-            duration = "Unknown Duration"  
-            self.lista_reproduccion.insertar(Cancion(song_name, artist_name, duration, file_path))
+            nombre_cancion = os.path.basename(file_path)  
+            artista = "Artista desconocido"  
+            duracion = "0:00"  
+            self.lista_reproduccion.insertar(Cancion(nombre_cancion, artista, duracion, file_path))
 
-    def cargar_canciones(self):
+    def cargar_canciones(self): #canciones por defecto
         self.lista_reproduccion.insertar(Cancion("Down Under", "Men At Work", "3:42", 'Reproductor/DownUnder.mp3'))
         self.lista_reproduccion.insertar(Cancion("Blondie", "Sunset Sons", "3:24", 'Reproductor/Blondie.mp3'))
         self.nodo_actual = self.lista_reproduccion.cabeza
