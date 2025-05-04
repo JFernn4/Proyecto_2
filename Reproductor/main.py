@@ -2,6 +2,8 @@ from tkinter import *
 import pygame
 import os
 from tkinter import filedialog
+from mutagen.mp3 import MP3
+from tkinter import ttk
 
 class Cancion:
     def __init__(self, nombre, artista, duracion, ruta_archivo):
@@ -48,15 +50,26 @@ class ReproductorMusica:
         self.lista_reproduccion = ListaReproduccion()
         self.cancion_actual = None
         self.nodo_actual = None
-        self.is_paused = False 
+        self.is_paused = False
+        self.duracion_total = 0
 
         pygame.mixer.init()
 
         self.root.title("Reproductor de Música")
-        self.root.geometry("400x200")
+        self.root.geometry("1280x720")
+        root.configure(bg="#0b0b2a")
 
         self.control_frame = Frame(self.root)
         self.control_frame.pack()
+
+        self.lista_box = Listbox(self.root, width=60, height=20, bg= "#222241", fg= "#4d4d87", font=("Helvetica", 10), justify= "center")
+        self.lista_box.bind('<Double-Button-1>', self.reproducir_seleccionada)
+        self.lista_box.pack(pady=10)
+
+        self.menu_contextual = Menu(self.root, tearoff=0)
+        self.menu_contextual.add_command(label="Editar", command=self.editar_cancion)
+        self.menu_contextual.add_command(label="Eliminar", command=self.eliminar_cancion)
+        self.lista_box.bind("<Button-3>", self.mostrar_menu_contextual)
 
         self.reproducir_btn = Button(self.control_frame, text="Reproducir", command=self.reproducir)
         self.pausar_btn = Button(self.control_frame, text="Pausar", command=self.pausar)
@@ -70,19 +83,48 @@ class ReproductorMusica:
         self.anterior_btn.grid(row=0, column=3, padx=5, pady=5)
         self.agregar_btn.grid(row=0, column=4, padx=5, pady=5)
 
-        self.cargar_canciones() 
+        # Etiquetas de canción
+        self.info_label = Label(self.root, text="", bg="#0b0b2a", fg="#ff5757", font=("Helvetica", 14))
+        self.info_label.pack()
+        self.info_label2 = Label(self.root, text="", bg="#0b0b2a", fg="#a6a6a6", font=("Helvetica", 11))
+        self.info_label2.pack()
+
+        # Barra de progreso
+        estilo1 = ttk.Style()
+        estilo1.theme_use('clam')
+        estilo1.configure("Horizontal.TProgressbar", foreground='white', background='white',troughcolor='#373747',
+        bordercolor='#0b0b2a',lightcolor='white', darkcolor='white')
+        
+        self.progress = ttk.Progressbar(self.root, orient=HORIZONTAL, length=400, mode='determinate', style="Horizontal.TProgressbar")
+        self.progress.pack(pady=10)
+
+
+        # Etiquetas de tiempo
+        self.tiempo_actual_label = Label(self.root, text="00:00", bg="#0b0b2a", fg="white", font=("Helvetica", 10))
+        self.tiempo_actual_label.pack(side=LEFT, padx=(20, 0))
+        self.tiempo_restante_label = Label(self.root, text="00:00", bg="#0b0b2a", fg="white", font=("Helvetica", 10))
+        self.tiempo_restante_label.pack(side=RIGHT, padx=(0, 20))
+
+        self.cargar_canciones()
 
     def agregar_cancion(self):
         file_path = filedialog.askopenfilename(title="Seleccionar Canción", filetypes=(("MP3 Files", "*.mp3"), ("All Files", "*.*")))
         if file_path:
-            nombre_cancion = os.path.basename(file_path)  
-            artista = "Artista desconocido"  
-            duracion = "0:00"  
-            self.lista_reproduccion.insertar(Cancion(nombre_cancion, artista, duracion, file_path))
+            nombre_cancion = os.path.basename(file_path)
+            artista = "Artista desconocido"
+            duracion = "0:00"
+            nueva_cancion = Cancion(nombre_cancion, artista, duracion, file_path)
+            self.lista_reproduccion.insertar(nueva_cancion)
+            self.lista_box.insert(END, f"{nombre_cancion} - {artista}")
 
-    def cargar_canciones(self): #canciones por defecto
-        self.lista_reproduccion.insertar(Cancion("Down Under", "Men At Work", "3:42", 'Reproductor/DownUnder.mp3'))
-        self.lista_reproduccion.insertar(Cancion("Blondie", "Sunset Sons", "3:24", 'Reproductor/Blondie.mp3'))
+    def cargar_canciones(self):
+        canciones = [
+            Cancion("Down Under", "Men At Work", "3:42", 'Reproductor/DownUnder.mp3'),
+            Cancion("Blondie", "Sunset Sons", "3:24", 'Reproductor/Blondie.mp3')
+        ]
+        for cancion in canciones:
+            self.lista_reproduccion.insertar(cancion)
+            self.lista_box.insert(END, f"{cancion.nombre} - {cancion.artista}")
         self.nodo_actual = self.lista_reproduccion.cabeza
 
     def reproducir(self):
@@ -91,28 +133,138 @@ class ReproductorMusica:
             if self.is_paused:
                 pygame.mixer.music.unpause()
                 self.is_paused = False
+                self.actualizar_barra()
             else:
                 pygame.mixer.music.load(self.cancion_actual.ruta_archivo)
                 pygame.mixer.music.play()
-                self.is_paused = False
+                audio = MP3(self.cancion_actual.ruta_archivo)
+                self.duracion_total = audio.info.length
+                self.progress['maximum'] = self.duracion_total
+                self.progress['value'] = 0  # Resetea la barra
+                self.info_label.config(text=self.cancion_actual.nombre)
+                self.info_label2.config(text=self.cancion_actual.artista)
+                self.actualizar_barra()
 
     def pausar(self):
-        pygame.mixer.music.pause()
-        self.is_paused = True
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.pause()
+            self.is_paused = True
+
 
     def siguiente(self):
         if self.nodo_actual:
             self.nodo_actual = self.lista_reproduccion.obtener_siguiente(self.nodo_actual)
-            if self.nodo_actual:
-                self.reproducir()
+            self.reproducir()
 
     def anterior(self):
         if self.nodo_actual:
             self.nodo_actual = self.lista_reproduccion.obtener_anterior(self.nodo_actual)
-            if self.nodo_actual:
-                self.reproducir()
+            self.reproducir()
 
+    def reproducir_seleccionada(self, event):
+        seleccion = self.lista_box.curselection()
+        if seleccion:
+            index = seleccion[0]
+            self.nodo_actual = self.lista_reproduccion.cabeza
+            for _ in range(index):
+                self.nodo_actual = self.nodo_actual.siguiente
+            self.reproducir()
+
+    def mostrar_menu_contextual(self, event):
+        try:
+            index = self.lista_box.nearest(event.y)
+            self.lista_box.selection_clear(0, END)
+            self.lista_box.selection_set(index)
+            self.lista_box.activate(index)
+            self.menu_contextual.post(event.x_root, event.y_root)
+        except:
+            pass
+
+    def editar_cancion(self):
+        seleccion = self.lista_box.curselection()
+        if not seleccion:
+            return
+        index = seleccion[0]
+
+        nodo = self.lista_reproduccion.cabeza
+        for _ in range(index):
+            nodo = nodo.siguiente
+
+        ventana = Toplevel(self.root)
+        ventana.title("Editar Canción")
+
+        Label(ventana, text="Nombre:").grid(row=0, column=0)
+        entrada_nombre = Entry(ventana, width=40)
+        entrada_nombre.grid(row=0, column=1)
+        entrada_nombre.insert(0, nodo.cancion.nombre)
+
+        Label(ventana, text="Artista:").grid(row=1, column=0)
+        entrada_artista = Entry(ventana, width=40)
+        entrada_artista.grid(row=1, column=1)
+        entrada_artista.insert(0, nodo.cancion.artista)
+
+        def guardar():
+            nodo.cancion.nombre = entrada_nombre.get()
+            nodo.cancion.artista = entrada_artista.get()
+            self.lista_box.delete(index)
+            self.lista_box.insert(index, f"{nodo.cancion.nombre} - {nodo.cancion.artista}")
+            self.info_label.config(text=self.cancion_actual.nombre)
+            self.info_label2.config(text=self.cancion_actual.artista)
+            ventana.destroy()
+
+        Button(ventana, text="Guardar", command=guardar).grid(row=2, column=1, pady=10)
+
+    def eliminar_cancion(self):
+        seleccion = self.lista_box.curselection()
+        if not seleccion:
+            return
+        index = seleccion[0]
+
+       
+        self.lista_box.delete(index)
+
+        # Eliminar de la lista enlazada
+        if self.lista_reproduccion.esta_vacia():
+            return
+
+        nodo = self.lista_reproduccion.cabeza
+        for _ in range(index):
+            nodo = nodo.siguiente
+
+        if nodo == self.lista_reproduccion.cabeza and nodo == self.lista_reproduccion.cola:
+            self.lista_reproduccion.cabeza = None
+            self.lista_reproduccion.cola = None
+        else:
+            nodo.anterior.siguiente = nodo.siguiente
+            nodo.siguiente.anterior = nodo.anterior
+            if nodo == self.lista_reproduccion.cabeza:
+                self.lista_reproduccion.cabeza = nodo.siguiente
+            if nodo == self.lista_reproduccion.cola:
+                self.lista_reproduccion.cola = nodo.anterior
+
+        if self.nodo_actual == nodo:
+            self.nodo_actual = nodo.siguiente if nodo.siguiente != nodo else None
+
+    def actualizar_barra(self):
+        if pygame.mixer.music.get_busy() or not self.is_paused:
+            posicion = pygame.mixer.music.get_pos() / 1000  # en segundos
+            self.progress['value'] = posicion
+            # Actualizar etiquetas de tiempo
+            tiempo_actual = self.formatear_tiempo(posicion)
+            tiempo_restante = self.formatear_tiempo(self.duracion_total - posicion)
+            self.tiempo_actual_label.config(text=tiempo_actual)
+            self.tiempo_restante_label.config(text=tiempo_restante)
+            # Volver a llamar a esta función después de 100 milisegundos
+            self.root.after(100, self.actualizar_barra)
+    def formatear_tiempo(self, segundos):
+        minutos = int(segundos // 60)
+        segundos = int(segundos % 60)
+        return f"{minutos:02}:{segundos:02}"
+
+
+
+# Ejecutar la aplicación
 if __name__ == "__main__":
     root = Tk()
-    reproductor = ReproductorMusica(root)
+    app = ReproductorMusica(root)
     root.mainloop()
