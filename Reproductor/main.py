@@ -57,52 +57,75 @@ class ReproductorMusica:
 
         self.root.title("Reproductor de Música")
         self.root.geometry("1280x720")
-        root.configure(bg="#0b0b2a")
+        self.root.configure(bg="#0b0b2a")
 
-        self.control_frame = Frame(self.root)
-        self.control_frame.pack()
+        # Frame para la lista de canciones
+        self.lista_frame = Frame(self.root)
+        self.lista_frame.pack(side=LEFT, padx=10, pady=10, fill=Y)
 
-        self.lista_box = Listbox(self.root, width=60, height=20, bg= "#222241", fg= "#4d4d87", font=("Helvetica", 10), justify= "center")
+        self.lista_box = Listbox(self.lista_frame, width=60, height=20, bg="#222241", fg="#4d4d87", font=("Helvetica", 10), justify="center")
         self.lista_box.bind('<Double-Button-1>', self.reproducir_seleccionada)
-        self.lista_box.pack(pady=10)
+        self.lista_box.pack(side=LEFT, fill=BOTH, expand=True)
 
         self.menu_contextual = Menu(self.root, tearoff=0)
         self.menu_contextual.add_command(label="Editar", command=self.editar_cancion)
         self.menu_contextual.add_command(label="Eliminar", command=self.eliminar_cancion)
         self.lista_box.bind("<Button-3>", self.mostrar_menu_contextual)
 
-        self.reproducir_btn = Button(self.control_frame, text="Reproducir", command=self.reproducir)
-        self.pausar_btn = Button(self.control_frame, text="Pausar", command=self.pausar)
-        self.siguiente_btn = Button(self.control_frame, text="Siguiente", command=self.siguiente)
-        self.anterior_btn = Button(self.control_frame, text="Anterior", command=self.anterior)
-        self.agregar_btn = Button(self.control_frame, text="Agregar Canción", command=self.agregar_cancion)
+        # Frame central para botones y etiquetas de información
+        self.center_frame = Frame(self.root, bg="#0b0b2a")
+        self.center_frame.pack(side=TOP, fill=BOTH, expand=True)
 
-        self.reproducir_btn.grid(row=0, column=0, padx=5, pady=5)
-        self.pausar_btn.grid(row=0, column=1, padx=5, pady=5)
-        self.siguiente_btn.grid(row=0, column=2, padx=5, pady=5)
-        self.anterior_btn.grid(row=0, column=3, padx=5, pady=5)
-        self.agregar_btn.grid(row=0, column=4, padx=5, pady=5)
+        # Frame para controles (botones) centrados
+        self.control_frame = Frame(self.center_frame, bg="#0b0b2a")
+        self.control_frame.pack(pady=20)
 
-        # Etiquetas de canción
-        self.info_label = Label(self.root, text="", bg="#0b0b2a", fg="#ff5757", font=("Helvetica", 14))
-        self.info_label.pack()
-        self.info_label2 = Label(self.root, text="", bg="#0b0b2a", fg="#a6a6a6", font=("Helvetica", 11))
+        # Cargar imágenes para los botones
+        self.reproducir_img = PhotoImage(file="Reproductor/reproducir.png")
+        self.pausar_img = PhotoImage(file="Reproductor/pausa.png")
+        self.siguiente_img = PhotoImage(file="Reproductor/siguiente.png")
+        self.anterior_img = PhotoImage(file="Reproductor/anterior.png")
+        self.agregar_img = PhotoImage(file="Reproductor/examinar.png")
+
+        self.reproducir_btn = Button(self.control_frame, image=self.reproducir_img, command=self.reproducir, bg="#0b0b2a", borderwidth=0)
+        self.pausar_btn = Button(self.control_frame, image=self.pausar_img, command=self.pausar, bg="#0b0b2a", borderwidth=0)
+        self.siguiente_btn = Button(self.control_frame, image=self.siguiente_img, command=self.siguiente, bg="#0b0b2a", borderwidth=0)
+        self.anterior_btn = Button(self.control_frame, image=self.anterior_img, command=self.anterior, bg="#0b0b2a", borderwidth=0)
+        self.agregar_btn = Button(self.control_frame, image=self.agregar_img, command=self.agregar_cancion, bg="#0b0b2a", borderwidth=0)
+
+        self.reproducir_btn.grid(row=0, column=0, padx=10)
+        self.pausar_btn.grid(row=0, column=1, padx=10)
+        self.siguiente_btn.grid(row=0, column=2, padx=10)
+        self.anterior_btn.grid(row=0, column=3, padx=10)
+        self.agregar_btn.grid(row=0, column=4, padx=10)
+
+        # Etiquetas de canción centradas debajo de botones
+        self.info_label = Label(self.center_frame, text="", bg="#0b0b2a", fg="#ff5757", font=("Helvetica", 14))
+        self.info_label.pack(pady=(10,0))
+        self.info_label2 = Label(self.center_frame, text="", bg="#0b0b2a", fg="#a6a6a6", font=("Helvetica", 11))
         self.info_label2.pack()
 
-        # Barra de progreso
+        # Frame para barra de progreso y etiquetas de tiempo al fondo
+        self.bottom_frame = Frame(self.root, bg="#0b0b2a")
+        self.bottom_frame.pack(side=BOTTOM, fill=X, pady=10)
+
         estilo1 = ttk.Style()
         estilo1.theme_use('clam')
-        estilo1.configure("Horizontal.TProgressbar", foreground='white', background='white',troughcolor='#373747',
-        bordercolor='#0b0b2a',lightcolor='white', darkcolor='white')
-        
-        self.progress = ttk.Progressbar(self.root, orient=HORIZONTAL, length=400, mode='determinate', style="Horizontal.TProgressbar")
-        self.progress.pack(pady=10)
+        estilo1.configure("Horizontal.TProgressbar", foreground='white', background='white', troughcolor='#373747',
+                          bordercolor='#0b0b2a', lightcolor='white', darkcolor='white')
 
+        # Barra de progreso
+        self.progress = ttk.Progressbar(self.bottom_frame, orient=HORIZONTAL, length=500, mode='determinate', style="Horizontal.TProgressbar")
+        self.progress.pack(pady=(0,5))
 
-        # Etiquetas de tiempo
-        self.tiempo_actual_label = Label(self.root, text="00:00", bg="#0b0b2a", fg="white", font=("Helvetica", 10))
+        # Frame para etiquetas de tiempo, lado izquierdo y derecho debajo barra de progreso
+        self.tiempos_frame = Frame(self.bottom_frame, bg="#0b0b2a")
+        self.tiempos_frame.pack(fill=X)
+
+        self.tiempo_actual_label = Label(self.tiempos_frame, text="00:00", bg="#0b0b2a", fg="white", font=("Helvetica", 10))
         self.tiempo_actual_label.pack(side=LEFT, padx=(20, 0))
-        self.tiempo_restante_label = Label(self.root, text="00:00", bg="#0b0b2a", fg="white", font=("Helvetica", 10))
+
+        self.tiempo_restante_label = Label(self.tiempos_frame, text="00:00", bg="#0b0b2a", fg="white", font=("Helvetica", 10))
         self.tiempo_restante_label.pack(side=RIGHT, padx=(0, 20))
 
         self.cargar_canciones()
@@ -149,7 +172,6 @@ class ReproductorMusica:
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.pause()
             self.is_paused = True
-
 
     def siguiente(self):
         if self.nodo_actual:
@@ -220,7 +242,6 @@ class ReproductorMusica:
             return
         index = seleccion[0]
 
-       
         self.lista_box.delete(index)
 
         # Eliminar de la lista enlazada
@@ -256,12 +277,11 @@ class ReproductorMusica:
             self.tiempo_restante_label.config(text=tiempo_restante)
             # Volver a llamar a esta función después de 100 milisegundos
             self.root.after(100, self.actualizar_barra)
+
     def formatear_tiempo(self, segundos):
         minutos = int(segundos // 60)
         segundos = int(segundos % 60)
         return f"{minutos:02}:{segundos:02}"
-
-
 
 # Ejecutar la aplicación
 if __name__ == "__main__":
