@@ -61,9 +61,9 @@ class ReproductorMusica:
 
         # Frame para la lista de canciones
         self.lista_frame = Frame(self.root)
-        self.lista_frame.pack(side=LEFT, padx=10, pady=10, fill=Y)
+        self.lista_frame.pack(side=LEFT, padx=0, pady=0, fill=Y)
 
-        self.lista_box = Listbox(self.lista_frame, width=60, height=20, bg="#222241", fg="#4d4d87", font=("Helvetica", 10), justify="center")
+        self.lista_box = Listbox(self.lista_frame, width=35, height=20, bg="#222241", fg="#4d4d87", font=("Helvetica", 11), justify="center", border= -1)
         self.lista_box.bind('<Double-Button-1>', self.reproducir_seleccionada)
         self.lista_box.pack(side=LEFT, fill=BOTH, expand=True)
 
